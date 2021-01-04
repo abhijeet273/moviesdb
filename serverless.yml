@@ -1,0 +1,75 @@
+service: moviesdb
+
+custom:
+  settings:
+    MOVIES_TABLE: MOVIES
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.MOVIES_TABLE}"
+
+functions:
+  createMovie:
+    handler: handler.createMovie
+    events:
+    - http:
+        path: /movie
+        method: post
+        cors: true
+  getAllMovies:
+    handler: handler.getAllMovies
+    events:
+    - http:
+        path: /movies
+        method: get
+        cors: true
+  getMovie:
+    handler: handler.getMovie
+    events:
+    - http:
+        path: /movie/{id}
+        method: get
+        cors: true
+  updateMovie:
+    handler: handler.updateMovie
+    events:
+    - http:
+        path: /movie/{id}
+        method: put
+        cors: true
+  deleteMovie:
+    handler: handler.deleteMovie
+    events:
+    - http:
+        path: /movie/{id}
+        method: delete
+        cors: true
+
+resources:
+  Resources:
+    MoviesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.MOVIES_TABLE}
